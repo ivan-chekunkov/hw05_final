@@ -246,7 +246,7 @@ class CacheTests(TestCase):
         cache.clear()
         response = self.author_client.get(reverse('posts:index'))
         context_after_clear_cache = len(response.context['page_obj'])
-        self.assertEqual(context_after_clear_cache, context_before_delete - 1)
+        self.assertEqual(context_after_clear_cache, 0)
 
 
 class FollowTests(TestCase):
