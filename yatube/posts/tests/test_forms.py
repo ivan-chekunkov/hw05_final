@@ -11,7 +11,7 @@ from ..models import Group, Post
 
 
 User = get_user_model()
-TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=os.path.join(settings.BASE_DIR, 'tmp'))
+TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 
 
 @override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
