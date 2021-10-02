@@ -21,7 +21,7 @@
                 </div>
                 <div class="card-body">
                     <form method="post" {% if is_edit %} action="{% url 'posts:post_edit' post.id %}" {% else %}
-                        action="{% url 'posts:post_create' %}" {% endif %}>
+                        action="{% url 'posts:post_create' %}" {% endif %} enctype="multipart/form-data">
                         {% csrf_token %}
                         {% for field in form %}
                         <div class="form-group row my-3" {% if field.field.required %} aria-required="true" {% else %}

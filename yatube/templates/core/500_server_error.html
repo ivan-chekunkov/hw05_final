@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}Custom 500{% endblock %}
+{% block content %}
+<h1>Internal Server Error 500!</h1>
+<a href="{% url 'posts:index' %}"> Идите на главную</a>
+{% endblock %}

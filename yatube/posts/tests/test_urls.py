@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.test import Client, TestCase
 from django.urls import reverse
 from ..models import Group, Post
@@ -24,6 +25,7 @@ class PostURLTests(TestCase):
         )
 
     def setUp(self):
+        cache.clear()
         self.guest_client = Client()
         self.author_client = Client()
         self.author_client.force_login(self.user)
@@ -58,7 +60,18 @@ class PostURLTests(TestCase):
             reverse('posts:post_create'):
             reverse('users:login') + '?next=' + reverse('posts:post_create'),
             reverse('posts:post_edit', args=(self.post.id,)):
-            reverse('posts:post_detail', args=(self.post.id,))
+            reverse('posts:post_detail', args=(self.post.id,)),
+            reverse('posts:follow_index'):
+            reverse('users:login') + '?next=' + reverse('posts:follow_index'),
+            reverse('posts:profile_follow', args=(self.user.username,)):
+            reverse('users:login') + '?next='
+            + reverse('posts:profile_follow', args=(self.user.username,)),
+            reverse('posts:profile_unfollow', args=(self.user.username,)):
+            reverse('users:login') + '?next='
+            + reverse('posts:profile_unfollow', args=(self.user.username,)),
+            reverse('posts:add_comment', args=(self.post.id,)):
+            reverse('users:login') + '?next='
+            + reverse('posts:add_comment', args=(self.post.id,)),
         }
         for adress, readres in url_names.items():
             with self.subTest(adress=adress):
@@ -66,9 +79,15 @@ class PostURLTests(TestCase):
                 self.assertRedirects(response, readres)
 
     def test_url_exists_at_desired_location_for_authorized(self):
-        """По указанному URL-адресу открывается страница для овторизованных"""
-        response = self.authorized_client.get(reverse('posts:post_create'))
-        self.assertEqual(response.status_code, 200)
+        """По указанному URL-адресу открывается страница для авторизованных"""
+        url_names = {
+            reverse('posts:post_create'),
+            reverse('posts:follow_index'),
+        }
+        for adress in url_names:
+            with self.subTest(adress=adress):
+                response = self.authorized_client.get(adress)
+                self.assertEqual(response.status_code, 200)
 
     def test_url_redirect_not_author(self):
         """По указанному URL-адресу происходит перенаправление на другой URL"""
@@ -97,7 +116,9 @@ class PostURLTests(TestCase):
             reverse('posts:post_create'):
             'posts/create_post.html',
             reverse('posts:post_edit', args=(self.post.id,)):
-            'posts/create_post.html'
+            'posts/create_post.html',
+            reverse('posts:follow_index'):
+            'posts/follow.html',
         }
         for adress, template in templates_url_names.items():
             with self.subTest(adress=adress):
