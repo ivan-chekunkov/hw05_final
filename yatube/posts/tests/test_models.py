@@ -117,7 +117,8 @@ class CommentModelTest(TestCase):
         for field, expected_value in field_verboses.items():
             with self.subTest(field=field):
                 self.assertEqual(
-                    comment._meta.get_field(field).verbose_name, expected_value)
+                    comment._meta.get_field(field).
+                    verbose_name, expected_value)
 
     def test_help_text_model_comment(self):
         """help_text модели Comment совпадает с ожидаемым."""
