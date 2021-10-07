@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
-from ..models import Group, Post
+from ..models import Comment, Group, Post
 
 
 User = get_user_model()
@@ -99,3 +99,32 @@ class PostCreateFormTests(TestCase):
             response, reverse('posts:post_detail', args=(post_id,))
         )
         self.assertEqual(Post.objects.get(id=post_id).text, form_data['text'])
+
+
+class CommentViewsTest(TestCase):
+    @ classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.user = User.objects.create_user(username='TestUser')
+        cls.post = Post.objects.create(
+            author=cls.user,
+            text=' Тестовый пост больше 15 символов',
+        )
+
+    def setUp(self):
+        self.author_client = Client()
+        self.author_client.force_login(self.user)
+
+    def test_add_comment(self):
+        """Проверка добавления комментария"""
+        count_comment = Comment.objects.count()
+        comment = Comment.objects.create(
+            text='Тестовый коммент',
+            post=self.post,
+            author=self.user
+        )
+        self.assertEqual(Comment.objects.count(), count_comment + 1)
+        latest_comment = Comment.objects.latest('created')
+        self.assertTrue(latest_comment.text, comment.text)
+        self.assertTrue(latest_comment.post, comment.post)
+        self.assertTrue(latest_comment.author, comment.author)

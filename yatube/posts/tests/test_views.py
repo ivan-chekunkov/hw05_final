@@ -8,7 +8,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from django import forms
-from ..models import Comment, Follow, Group, Post
+from ..models import Follow, Group, Post
 
 User = get_user_model()
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
@@ -20,30 +20,6 @@ class PostViewsTests(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.user = User.objects.create_user(username='TestUser')
-        cls.group = Group.objects.create(
-            title='Тестовая группа',
-            slug='test-slug',
-            description='Тестовое описание',
-        )
-        cls.small_gif = (
-            b'\x47\x49\x46\x38\x39\x61\x02\x00'
-            b'\x01\x00\x80\x00\x00\x00\x00\x00'
-            b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
-            b'\x00\x00\x00\x2C\x00\x00\x00\x00'
-            b'\x02\x00\x01\x00\x00\x02\x02\x0C'
-            b'\x0A\x00\x3B'
-        )
-        cls.uploaded = SimpleUploadedFile(
-            name='small.gif',
-            content=cls.small_gif,
-            content_type='image/gif'
-        )
-        cls.post = Post.objects.create(
-            author=cls.user,
-            text='Тестовый пост больше 15 символов',
-            group=cls.group,
-            image=cls.uploaded,
-        )
 
     @classmethod
     def tearDownClass(cls):
@@ -54,6 +30,30 @@ class PostViewsTests(TestCase):
         cache.clear()
         self.author_client = Client()
         self.author_client.force_login(self.user)
+        self.group = Group.objects.create(
+            title='Тестовая группа',
+            slug='test-slug',
+            description='Тестовое описание',
+        )
+        small_gif = (
+            b'\x47\x49\x46\x38\x39\x61\x02\x00'
+            b'\x01\x00\x80\x00\x00\x00\x00\x00'
+            b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
+            b'\x00\x00\x00\x2C\x00\x00\x00\x00'
+            b'\x02\x00\x01\x00\x00\x02\x02\x0C'
+            b'\x0A\x00\x3B'
+        )
+        uploaded = SimpleUploadedFile(
+            name='small.gif',
+            content=small_gif,
+            content_type='image/gif'
+        )
+        self.post = Post.objects.create(
+            author=self.user,
+            text='Тестовый пост больше 15 символов',
+            group=self.group,
+            image=uploaded,
+        )
 
     def test_pages_uses_correct_template(self):
         """URL-адрес использует соответствующий шаблон."""
@@ -86,7 +86,7 @@ class PostViewsTests(TestCase):
             self.assertEqual(post.text, self.post.text)
             self.assertEqual(post.group, self.group)
             self.assertEqual(
-                post.image.name, 'posts/' + self.uploaded.name
+                post.image, self.post.image
             )
 
     def test_index_show_correct_context(self):
@@ -195,33 +195,6 @@ class PaginatorViewsTest(TestCase):
                 self.assertEqual(len(response.context['page_obj']), 5)
 
 
-class CommentViewsTest(TestCase):
-    @ classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.user = User.objects.create_user(username='TestUser')
-        cls.post = Post.objects.create(
-            author=cls.user,
-            text=' Тестовый пост больше 15 символов',
-        )
-
-    def setUp(self):
-        self.author_client = Client()
-        self.author_client.force_login(self.user)
-
-    def test_add_comment(self):
-        """Проверка добавления комментария"""
-        count_comment = Comment.objects.count()
-        comment = Comment.objects.create(
-            text='Тестовый коммент',
-            post=self.post,
-            author=self.user
-        )
-        self.assertEqual(Comment.objects.count(), count_comment + 1)
-        latest_comment = Comment.objects.latest('created')
-        self.assertTrue(latest_comment.text, comment.text)
-
-
 class CacheTests(TestCase):
     @ classmethod
     def setUpClass(cls):
@@ -238,32 +211,23 @@ class CacheTests(TestCase):
             text='Тестовый пост больше 15 символов',
         )
         response = self.author_client.get(reverse('posts:index'))
-        context_before_delete = len(response.context['page_obj'])
+        content_before_delete = response.content
         post.delete()
         response = self.author_client.get(reverse('posts:index'))
-        context_after_delete = len(response.context['page_obj'])
-        self.assertEqual(context_after_delete, context_before_delete)
+        content_after_delete = response.content
+        self.assertEqual(content_after_delete, content_before_delete)
         cache.clear()
         response = self.author_client.get(reverse('posts:index'))
-        context_after_clear_cache = len(response.context['page_obj'])
-        self.assertEqual(context_after_clear_cache, 0)
+        content_before_clear = response.content
+        self.assertNotEqual(content_before_clear, content_before_delete)
 
 
 class FollowTests(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.first_user = User.objects.create_user(username='TestUser_1')
-        cls.second_user = User.objects.create_user(username='TestUser_2')
-        cls.third_user = User.objects.create_user(username='TestUser_3')
-        cls.post = Post.objects.create(
-            text="Тестовый пост",
-            author=cls.first_user
-        )
-        cls.following = Follow.objects.create(
-            user=cls.third_user,
-            author=cls.first_user
-        )
+        cls.first_user = User.objects.create_user(username='follower')
+        cls.second_user = User.objects.create_user(username='following')
 
     def setUp(self):
         self.first_user_client = Client()
@@ -274,24 +238,32 @@ class FollowTests(TestCase):
 
     def test_follow(self):
         """Проверка подписки на автора"""
-        count = Follow.objects.filter(user=self.second_user).count()
-        Follow.objects.create(
-            user=self.second_user,
-            author=self.first_user
-        )
-        count_after = Follow.objects.filter(user=self.second_user).count()
+        count = Follow.objects.count()
+        self.second_user_client.post(
+            reverse('posts:profile_follow', args=(self.first_user.username,)))
+        count_after = Follow.objects.count()
         self.assertEqual(count_after, count + 1)
 
     def test_unfollow(self):
         """Проверка отписки от автора"""
-        count = Follow.objects.filter(user=self.third_user).count()
-        unfollow = Follow.objects.filter(
-            user=self.third_user,
-            author=self.first_user
+        Follow.objects.create(
+            user=self.first_user,
+            author=self.second_user
         )
-        unfollow.delete()
-        count_after = Follow.objects.filter(user=self.second_user).count()
+        count = Follow.objects.count()
+        self.first_user_client.post(
+            reverse('posts:profile_unfollow',
+                    args=(self.second_user.username,)))
+        count_after = Follow.objects.count()
         self.assertEqual(count_after, count - 1)
+
+    def test_follow_index_empty(self):
+        """Правильное отображение follow_index пустого"""
+        response = self.first_user_client.post(
+            reverse('posts:follow_index'),
+        )
+        count = len(response.context['page_obj'])
+        self.assertEqual(count, 0)
 
     def test_follow_index(self):
         """Правильное отображение follow_index"""
@@ -299,25 +271,19 @@ class FollowTests(TestCase):
             reverse('posts:follow_index'),
         )
         count_first = len(response.context['page_obj'])
-        response = self.second_user_client.post(
-            reverse('posts:follow_index'),
-        )
-        count_second = len(response.context['page_obj'])
         Follow.objects.create(
             user=self.first_user,
-            author=self.third_user
+            author=self.second_user
         )
-        Post.objects.create(
+        post = Post.objects.create(
             text="Тестовый пост №2",
-            author=self.third_user
+            author=self.second_user
         )
         response = self.first_user_client.post(
             reverse('posts:follow_index'),
         )
         count_first_after = len(response.context['page_obj'])
-        response = self.second_user_client.post(
-            reverse('posts:follow_index'),
-        )
-        count_second_after = len(response.context['page_obj'])
         self.assertEqual(count_first_after, count_first + 1)
-        self.assertEqual(count_second_after, count_second)
+        post_response = response.context['page_obj'][0]
+        self.assertEqual(post_response.text, post.text)
+        self.assertEqual(post_response.author, self.second_user)

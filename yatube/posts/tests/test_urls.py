@@ -60,7 +60,8 @@ class PostURLTests(TestCase):
             reverse('posts:post_create'):
             reverse('users:login') + '?next=' + reverse('posts:post_create'),
             reverse('posts:post_edit', args=(self.post.id,)):
-            reverse('posts:post_detail', args=(self.post.id,)),
+            reverse('users:login') + '?next='
+            + reverse('posts:post_edit', args=(self.post.id,)),
             reverse('posts:follow_index'):
             reverse('users:login') + '?next=' + reverse('posts:follow_index'),
             reverse('posts:profile_follow', args=(self.user.username,)):
