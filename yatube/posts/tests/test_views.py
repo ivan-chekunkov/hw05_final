@@ -239,10 +239,16 @@ class FollowTests(TestCase):
     def test_follow(self):
         """Проверка подписки на автора"""
         count = Follow.objects.count()
+        follow = Follow.objects.create(
+            user=self.second_user,
+            author=self.first_user
+        )
         self.second_user_client.post(
             reverse('posts:profile_follow', args=(self.first_user.username,)))
         count_after = Follow.objects.count()
+        latest_follow = Follow.objects.latest('id')
         self.assertEqual(count_after, count + 1)
+        self.assertEqual(latest_follow, follow)
 
     def test_unfollow(self):
         """Проверка отписки от автора"""
@@ -267,10 +273,6 @@ class FollowTests(TestCase):
 
     def test_follow_index(self):
         """Правильное отображение follow_index"""
-        response = self.first_user_client.post(
-            reverse('posts:follow_index'),
-        )
-        count_first = len(response.context['page_obj'])
         Follow.objects.create(
             user=self.first_user,
             author=self.second_user
@@ -282,8 +284,5 @@ class FollowTests(TestCase):
         response = self.first_user_client.post(
             reverse('posts:follow_index'),
         )
-        count_first_after = len(response.context['page_obj'])
-        self.assertEqual(count_first_after, count_first + 1)
         post_response = response.context['page_obj'][0]
-        self.assertEqual(post_response.text, post.text)
-        self.assertEqual(post_response.author, self.second_user)
+        self.assertEqual(post_response, post)

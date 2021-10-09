@@ -118,13 +118,18 @@ class CommentViewsTest(TestCase):
     def test_add_comment(self):
         """Проверка добавления комментария"""
         count_comment = Comment.objects.count()
-        comment = Comment.objects.create(
-            text='Тестовый коммент',
-            post=self.post,
-            author=self.user
+        form_data = {
+            'text': 'Тестовый коммент',
+            'post': self.post,
+            'author': self.user
+        }
+        self.author_client.post(
+            reverse('posts:add_comment', args=(self.post.id,)),
+            data=form_data,
+            follow=True
         )
         self.assertEqual(Comment.objects.count(), count_comment + 1)
         latest_comment = Comment.objects.latest('created')
-        self.assertTrue(latest_comment.text, comment.text)
-        self.assertTrue(latest_comment.post, comment.post)
-        self.assertTrue(latest_comment.author, comment.author)
+        self.assertTrue(latest_comment.text, form_data['text'])
+        self.assertTrue(latest_comment.post, form_data['post'])
+        self.assertTrue(latest_comment.author, form_data['author'])

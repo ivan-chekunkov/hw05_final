@@ -74,7 +74,7 @@ def post_edit(request, post_id):
         instance=post
     )
     if form.is_valid():
-        post = form.save(commit=False)
+        post = form.save()
         post.save()
         return redirect('posts:post_detail', post.pk)
     context = {
@@ -129,8 +129,8 @@ def follow_index(request):
 @login_required
 def profile_follow(request, username):
     author = get_object_or_404(User, username=username)
-    if not request.user == author and Follow.objects.filter(
-            user=request.user, author=author).exists() is False:
+    if request.user != author and not Follow.objects.filter(
+            user=request.user, author=author).exists():
         Follow.objects.create(user=request.user, author=author)
     return redirect('posts:profile', username=username)
 
@@ -138,7 +138,7 @@ def profile_follow(request, username):
 @login_required
 def profile_unfollow(request, username):
     author = get_object_or_404(User, username=username)
-    unfollow = Follow.objects.filter(user=request.user, author=author).exists()
-    if unfollow:
-        Follow.objects.filter(user=request.user, author=author).delete()
+    unfollow = Follow.objects.filter(user=request.user, author=author)
+    if unfollow.exists():
+        unfollow.delete()
     return redirect('posts:profile', username=username)
