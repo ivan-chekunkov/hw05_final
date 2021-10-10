@@ -239,16 +239,13 @@ class FollowTests(TestCase):
     def test_follow(self):
         """Проверка подписки на автора"""
         count = Follow.objects.count()
-        follow = Follow.objects.create(
-            user=self.second_user,
-            author=self.first_user
-        )
         self.second_user_client.post(
             reverse('posts:profile_follow', args=(self.first_user.username,)))
         count_after = Follow.objects.count()
         latest_follow = Follow.objects.latest('id')
         self.assertEqual(count_after, count + 1)
-        self.assertEqual(latest_follow, follow)
+        self.assertEqual(latest_follow.user, self.second_user)
+        self.assertEqual(latest_follow.author, self.first_user)
 
     def test_unfollow(self):
         """Проверка отписки от автора"""
