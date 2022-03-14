@@ -35,7 +35,7 @@ class PostCreateFormTests(TestCase):
         self.author_client.force_login(self.user)
 
     def test_create_post(self):
-        """Валидная форма создает запись в Post"""
+        """Валидная форма создает запись в Post."""
         post_count = Post.objects.count()
         small_gif = (
             b'\x47\x49\x46\x38\x39\x61\x02\x00'
@@ -79,7 +79,7 @@ class PostCreateFormTests(TestCase):
         )
 
     def test_edit_post(self):
-        """Валидная форма редактирования записи в Post"""
+        """Валидная форма редактирования записи в Post."""
         post = Post.objects.create(
             author=self.user,
             text='Тестовый пост больше 15 символов',
@@ -116,7 +116,7 @@ class CommentViewsTest(TestCase):
         self.author_client.force_login(self.user)
 
     def test_add_comment(self):
-        """Проверка добавления комментария"""
+        """Проверка добавления комментария."""
         count_comment = Comment.objects.count()
         form_data = {
             'text': 'Тестовый коммент',

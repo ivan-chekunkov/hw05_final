@@ -34,7 +34,7 @@ class PostURLTests(TestCase):
         self.authorized_client.force_login(self.user)
 
     def test_404_page_status_code(self):
-        """Проверка вызова ошибки 404 при вызове несуществующей страницы"""
+        """Проверка вызова ошибки 404 при вызове несуществующей страницы."""
         response = self.guest_client.get('/unexisting_page/')
         self.assertEqual(response.status_code, 404)
 
@@ -80,7 +80,7 @@ class PostURLTests(TestCase):
                 self.assertRedirects(response, readres)
 
     def test_url_exists_at_desired_location_for_authorized(self):
-        """По указанному URL-адресу открывается страница для авторизованных"""
+        """По указанному URL-адресу открывается страница для авторизованных."""
         url_names = {
             reverse('posts:post_create'),
             reverse('posts:follow_index'),
@@ -98,13 +98,13 @@ class PostURLTests(TestCase):
             'posts:post_detail', args=(self.post.id,)))
 
     def test_url_exists_at_desired_location_for_author(self):
-        """По указанному URL-адресу открывается страница для автора"""
+        """По указанному URL-адресу открывается страница для автора."""
         response = self.author_client.get(
             reverse('posts:post_edit', args=(self.post.id,)))
         self.assertEqual(response.status_code, 200)
 
     def test_correct_template_for_url_app(self):
-        """URL-адрес использует соответствующий шаблон"""
+        """URL-адрес использует соответствующий шаблон."""
         templates_url_names = {
             reverse('posts:index'):
             'posts/index.html',

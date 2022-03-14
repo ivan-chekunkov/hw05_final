@@ -136,7 +136,7 @@ class PostViewsTests(TestCase):
                 self.assertIsInstance(form_field, expected)
 
     def test_post_edit_show_correct_context(self):
-        """Шаблон post_edit сформирован с верным контекстом формы"""
+        """Шаблон post_edit сформирован с верным контекстом формы."""
         response = self.author_client.get(
             reverse('posts:post_edit', args=(self.post.id,)))
         form_fields = {
@@ -152,7 +152,7 @@ class PostViewsTests(TestCase):
         self.assertEqual(response.context['is_edit'], True)
 
     def test_create_post_in_true_group(self):
-        """При указании группы пост появиться только в нужной группе"""
+        """При указании группы пост появиться только в нужной группе."""
         group = Group.objects.create(
             title='Тестовая группа №2',
             slug='test-slug2',
@@ -182,6 +182,7 @@ class PaginatorViewsTest(TestCase):
             )
 
     def test_paginator(self):
+        """Пагинация на страницах index, group_list, profile."""
         url_names = [
             reverse('posts:index'),
             reverse('posts:group_list', kwargs={'slug': self.group.slug}),
@@ -206,6 +207,7 @@ class CacheTests(TestCase):
         self.author_client.force_login(self.user)
 
     def test_cahce_index(self):
+        """Проверка работы кеша на странице index."""
         post = Post.objects.create(
             author=self.user,
             text='Тестовый пост больше 15 символов',
@@ -237,7 +239,7 @@ class FollowTests(TestCase):
         cache.clear()
 
     def test_follow(self):
-        """Проверка подписки на автора"""
+        """Проверка подписки на автора."""
         count = Follow.objects.count()
         self.second_user_client.post(
             reverse('posts:profile_follow', args=(self.first_user.username,)))
@@ -248,7 +250,7 @@ class FollowTests(TestCase):
         self.assertEqual(latest_follow.author, self.first_user)
 
     def test_unfollow(self):
-        """Проверка отписки от автора"""
+        """Проверка отписки от автора."""
         Follow.objects.create(
             user=self.first_user,
             author=self.second_user
@@ -261,7 +263,7 @@ class FollowTests(TestCase):
         self.assertEqual(count_after, count - 1)
 
     def test_follow_index_empty(self):
-        """Правильное отображение follow_index пустого"""
+        """Правильное отображение follow_index пустого."""
         response = self.first_user_client.post(
             reverse('posts:follow_index'),
         )
@@ -269,7 +271,7 @@ class FollowTests(TestCase):
         self.assertEqual(count, 0)
 
     def test_follow_index(self):
-        """Правильное отображение follow_index"""
+        """Правильное отображение follow_index."""
         Follow.objects.create(
             user=self.first_user,
             author=self.second_user
